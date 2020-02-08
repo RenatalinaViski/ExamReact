@@ -27,7 +27,6 @@ class DoctorsList extends React.Component {
         }
         return (
             <ul className="ul d-flex col ml-5 mt-4" >
-                {console.log(this.props.doctors.doctors)}
                 {this.props.doctors.doctors.length !== 0 ? 
                     this.props.doctors.doctors[0].map(doctor => this.renderComponent(doctor))
                    :

@@ -1,7 +1,6 @@
 import React, { useState } from "react"
 import { Provider, connect } from 'react-redux'
 import { createStore } from 'redux';
-import { Redirect } from "react-router-dom"
 
 
 let storeReg = createStore((state, action) => { //единственный редьюсер данного хранилища
@@ -86,10 +85,7 @@ export default ({ arrYear, onSend }) => {
     storeReg.subscribe(() => setReduxRegi(storeReg.getState()))
     const { valueDay, valueMonth, valueTime } = storeReg.getState()
     return (
-        <>
-       {
-           localStorage.reception > 0?
-           <Redirect to={'/doctors'} key="main" /> :        
+        <>            
             <Provider store={storeReg}>
                 <div className="input-group mb-3">
                     <Day arrYear={arrYear} valueDay={valueDay} valueMonth={valueMonth} key="dayVisit"/>
@@ -102,9 +98,8 @@ export default ({ arrYear, onSend }) => {
                 </div>
                 <Hour arrYear={arrYear} valueDay={valueDay} valueMonth={valueMonth} valueTime={valueTime} key="hourVisit" />
                 <p className="text-muted">просим заполнить все поля, для улучшения качества обслуживания</p>          
-                        <button className="btn btn-primary" onClick={()=>onSend(valueDay, valueMonth, valueTime)}>отправить заявку</button>
+                        <button className="btn btn-primary" onClick={()=>onSend(valueDay, valueMonth, valueTime)}><a href="/"> отправить заявку</a></button>
             </Provider>
-}
         </>
     )
 }
