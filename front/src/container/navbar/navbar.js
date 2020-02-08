@@ -20,7 +20,7 @@ class Navbar extends React.Component {
         return (
             <>
                 <nav className="navbar navbar-expand-lg navbar-light bg-info">
-                    <a className="navbar-brand col-3" href="#"><img src="https://img.icons8.com/color/50/000000/caduceus.png" /></a>
+                    <a className="navbar-brand col-sm-1 col-md-3" href="#"><img src="https://img.icons8.com/color/50/000000/caduceus.png" /></a>
                     <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                         <span className="navbar-toggler-icon"></span>
                     </button>

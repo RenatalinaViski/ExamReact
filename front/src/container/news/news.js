@@ -2,7 +2,6 @@ import React from 'react'
 import Slide from '../main/slide/slide'
 import { connect } from 'react-redux'
 import { fetchArticle} from '../../store/actions/article'
-import { Redirect } from 'react-router-dom'
 
 class News extends React.Component {
     constructor(props) {

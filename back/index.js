@@ -512,6 +512,146 @@ Treatments.init({
 
 }, { sequelize, modelName: "Treatment" })
 
+
+
+Diagnosis.belongsToMany(Treatments, { through: ListDiagnosis })
+Treatments.belongsToMany(Diagnosis, { through: ListDiagnosis })
+
+ListPrescriptions.hasMany(Prescriptions, { onDelete: "cascade" })
+// Prescriptions.hasMany(Medicines, { onDelete: "cascade" })
+
+Treatments.hasMany(Therapies, { onDelete: "cascade" })
+Procedures.belongsToMany(Therapies, { through: ListProcedures })
+Tests.belongsToMany(Therapies, { through: ListTests })
+Therapies.belongsToMany(Tests, { through: ListTests })
+Therapies.belongsToMany(Procedures, { through: ListProcedures })
+Therapies.hasMany(ListPrescriptions, { onDelete: "cascade" })
+// Therapies.hasMany(Patients, { onDelete: "cascade" })
+
+// Patients.hasMany(Therapies, { onDelete: "cascade" })
+// Professions.hasMany(Doctors, { onDelete: "cascade" })
+Doctors.hasMany(Therapies, { onDelete: "cascade" })
+
+// Reseptions.hasMany(Patients, { onDelete: "cascade" })
+//  Reseptions.hasMany(Doctors, { onDelete: "cascade" })
+
+
+const config = {
+  secret: `asdf+qwer`
+}
+function jwtCheck(req, secret) {
+  const authorization = req && req.headers && req.headers.authorization
+  if (authorization && authorization.startsWith('Bearer ')) {
+    const token = authorization.substr("Bearer ".length)
+    try {
+      const decoded = jwt.verify(token, secret)
+      return decoded
+    } catch (e) {
+      return null
+    }
+  }
+}
+app.get('/user', async (req, res) => res.send(await User.findAll()))
+
+app.get('/prescriptions', async (req, res) => res.send(await Prescriptions.findAll()))
+// app.get('/doctors', async (req,res)=> res.send( await  Doctors.findAll() ))
+app.get('/doctors', async (req, res) => res.send(
+  await sequelize.query('SELECT Doctors.Id AS ID, Lastname, Photo, Doctors.Name AS Name, Fathername, Professions.Name AS Profession FROM Doctors INNER JOIN Professions ON Professions.Id=ID_Professions')))
+app.get('/patients', async (req, res) => res.send(await Patients.findAll()))
+app.get('/procedures', async (req, res) => res.send(await Procedures.findAll()))
+app.get('/tests', async (req, res) => res.send(await Tests.findAll()))
+app.get('/medicines', async (req, res) => res.send(await Medicines.findAll()))
+app.get('/professions', async (req, res) => res.send(await Professions.findAll()))
+// app.get('/professions', async (req, res) => res.send(await sequelize.query('SELECT * FROM Professions')))
+//надо подумать правильно ли возвращать будет мою роль
+//мы должны вернуть токен!!! а на бэкэнде расшифровать его и взять от туда роль
+
+app.post('/login', async (req, res) => {
+  let confirm = await User.findOne({ where: { Login: req.body.Login, Password: req.body.Password } })
+  if (confirm != null) {
+    let ur = jwt.sign({ sub: confirm.ID }, config.secret)
+    res.status(200).send(JSON.stringify({ token: ur, Login: confirm.Login, ID: confirm.ID }))
+  } else {
+    res.status(404).send('"User doesnt has"')
+  }
+})
+
+app.post('/person', async (req, res) => {
+
+  let decoded = jwtCheck(req, config.secret)
+
+  if (decoded) {
+    let level = await sequelize.query(`SELECT U.Role FROM dbo.USERS AS U WHERE U.ID=${req.body.ID}`)
+    if (level[0][0].Role == 4) {
+      return res.status(200).send(JSON.stringify(await sequelize.query(`SELECT P.Firstname AS Firstname, P.Name AS Name,
+         P.Lastname AS Lastname, P.Birthdate AS Birthdate, P.City AS City, P.Street AS Street, P.Build AS Build,
+          P.Appartment AS Appartment, P.Photo AS Photo, P.Phone AS Phone FROM dbo.Patients AS P  INNER JOIN dbo.USERS AS U 
+          ON U.ID_Patients=P.Id  WHERE U.ID=${req.body.ID}`)))
+    }
+    if (level[0][0].Role == 3) {
+      return res.status(200).send(JSON.stringify(await sequelize.query(`SELECT D.Lastname AS Firstname, D.Name AS Name, 
+          D.Fathername AS Lastname, D.Birthdate AS Birthdate, D.City AS City, D.Street AS Street, D.Build AS Build,
+           D.Appartment AS Appartment, D.Photo AS Photo, D.Phone AS Phone  FROM dbo.Doctors AS D   INNER JOIN dbo.USERS AS U 
+           ON U.ID_Staff=D.Id WHERE U.ID =${req.body.ID}`)))
+    }
+  } else {
+    res.status(404).send('"User doesnt has"')
+  }
+})
+
+app.post('/time', async (req,res)=>{
+  let decoded = jwtCheck(req, config.secret)
+  if (decoded) {
+    return res.status(201).send(JSON.stringify(await Reseptions.findAll()))
+  }
+})
+
+app.post('/addprescription', async (req,res)=>{
+  let decoded = jwtCheck(req, config.secret)
+  if (decoded) {
+    let month=req.body.Month<10?('0'+req.body.Month):req.body.Month
+    let day=  req.body.Day<10?('0'+req.body.Day):req.body.Day
+    let date=`2020-${month}-${day}`
+    return res.status(201).send(JSON.stringify(await Reseptions.create({ID_D: req.body.ID_D, ID_P: req.body.ID_P, Date: date, Time: req.body.Time})))
+
+    //  return res.status(201).send(JSON.stringify(await sequelize.query(`INSERT INTO dbo.Reseptions(ID_D, ID_P, Date, Time)
+      // VALUES (${req.body.ID_D}, ${req.body.ID_P}, '2020-${req.body.Month}-${req.body.Day}', '${req.body.Time}')`)))
+  }
+})
+
+
+const fr = require("fs");
+
+app.get('/main', async (req, res) => {
+  let first = fr.readFileSync("article/coronavirus.txt", "UTF8")
+  let second = fr.readFileSync("article/new_virus.txt", "UTF8")
+  let third = fr.readFileSync("article/protection.txt", "UTF8")
+
+  await res.status(200).send(JSON.stringify([first, second, third]))
+})
+
+app.post('/regirstration', async (req, res) => {
+  //так тоже можно, но здесь SQL возвращает количество созданных позиций
+  // res.status(201).send(JSON.stringify(await sequelize.query(`INSERT INTO USERS(Login, Password, Role) VALUES ('${req.body.Login}', '${req.body.Password}', 4)`)))
+  let user = await User.create({ Login: req.body.Login, Password: req.body.Password, Role: 4 })
+  let ur = jwt.sign({ sub: user.ID }, config.secret)
+  res.status(201).send(JSON.stringify({ token: ur, Login: user.Login, ID: user.ID }))
+
+})
+
+
+
+
+sequelize.sync()
+  .then(result => {
+    console.log("/////////////////////Every is ok!")
+  })
+  .catch(err => console.log(err));
+
+const port = "4000"
+app.listen(port, () => console.log(`Example app listening on port ${port}!`))
+
+
 // User.create({
 //   id: 1,
 //   name: 'Nata',
@@ -687,26 +827,6 @@ Name:"Дерматология"
 ////Начинаю прописывать связи
 //один ко многоим Диагноз
 
-Diagnosis.belongsToMany(Treatments, { through: ListDiagnosis })
-Treatments.belongsToMany(Diagnosis, { through: ListDiagnosis })
-
-ListPrescriptions.hasMany(Prescriptions, { onDelete: "cascade" })
-// Prescriptions.hasMany(Medicines, { onDelete: "cascade" })
-
-Treatments.hasMany(Therapies, { onDelete: "cascade" })
-Procedures.belongsToMany(Therapies, { through: ListProcedures })
-Tests.belongsToMany(Therapies, { through: ListTests })
-Therapies.belongsToMany(Tests, { through: ListTests })
-Therapies.belongsToMany(Procedures, { through: ListProcedures })
-Therapies.hasMany(ListPrescriptions, { onDelete: "cascade" })
-// Therapies.hasMany(Patients, { onDelete: "cascade" })
-
-// Patients.hasMany(Therapies, { onDelete: "cascade" })
-// Professions.hasMany(Doctors, { onDelete: "cascade" })
-Doctors.hasMany(Therapies, { onDelete: "cascade" })
-
-// Reseptions.hasMany(Patients, { onDelete: "cascade" })
-//  Reseptions.hasMany(Doctors, { onDelete: "cascade" })
 
 
 ////Добавляем пациента на прием который есть 
@@ -836,120 +956,6 @@ ListPrescriptions.findAll({ raw: true }).then(procedura => {
 })()
 */
 
-const config = {
-  secret: `asdf+qwer`
-}
-function jwtCheck(req, secret) {
-  const authorization = req && req.headers && req.headers.authorization
-  if (authorization && authorization.startsWith('Bearer ')) {
-    const token = authorization.substr("Bearer ".length)
-    try {
-      const decoded = jwt.verify(token, secret)
-      return decoded
-    } catch (e) {
-      return null
-    }
-  }
-}
-app.get('/user', async (req, res) => res.send(await User.findAll()))
-
-app.get('/prescriptions', async (req, res) => res.send(await Prescriptions.findAll()))
-// app.get('/doctors', async (req,res)=> res.send( await  Doctors.findAll() ))
-app.get('/doctors', async (req, res) => res.send(
-  await sequelize.query('SELECT Doctors.Id AS ID, Lastname, Photo, Doctors.Name AS Name, Fathername, Professions.Name AS Profession FROM Doctors INNER JOIN Professions ON Professions.Id=ID_Professions')))
-app.get('/patients', async (req, res) => res.send(await Patients.findAll()))
-app.get('/procedures', async (req, res) => res.send(await Procedures.findAll()))
-app.get('/tests', async (req, res) => res.send(await Tests.findAll()))
-app.get('/medicines', async (req, res) => res.send(await Medicines.findAll()))
-app.get('/professions', async (req, res) => res.send(await Professions.findAll()))
-// app.get('/professions', async (req, res) => res.send(await sequelize.query('SELECT * FROM Professions')))
-//надо подумать правильно ли возвращать будет мою роль
-//мы должны вернуть токен!!! а на бэкэнде расшифровать его и взять от туда роль
-
-app.post('/login', async (req, res) => {
-  let confirm = await User.findOne({ where: { Login: req.body.Login, Password: req.body.Password } })
-  if (confirm != null) {
-    let ur = jwt.sign({ sub: confirm.ID }, config.secret)
-    res.status(200).send(JSON.stringify({ token: ur, Login: confirm.Login, ID: confirm.ID }))
-  } else {
-    res.status(404).send('"User doesnt has"')
-  }
-})
-
-app.post('/person', async (req, res) => {
-
-  let decoded = jwtCheck(req, config.secret)
-
-  if (decoded) {
-    let level = await sequelize.query(`SELECT U.Role FROM dbo.USERS AS U WHERE U.ID=${req.body.ID}`)
-    if (level[0][0].Role == 4) {
-      return res.status(200).send(JSON.stringify(await sequelize.query(`SELECT P.Firstname AS Firstname, P.Name AS Name,
-         P.Lastname AS Lastname, P.Birthdate AS Birthdate, P.City AS City, P.Street AS Street, P.Build AS Build,
-          P.Appartment AS Appartment, P.Photo AS Photo, P.Phone AS Phone FROM dbo.Patients AS P  INNER JOIN dbo.USERS AS U 
-          ON U.ID_Patients=P.Id  WHERE U.ID=${req.body.ID}`)))
-    }
-    if (level[0][0].Role == 3) {
-      return res.status(200).send(JSON.stringify(await sequelize.query(`SELECT D.Lastname AS Firstname, D.Name AS Name, 
-          D.Fathername AS Lastname, D.Birthdate AS Birthdate, D.City AS City, D.Street AS Street, D.Build AS Build,
-           D.Appartment AS Appartment, D.Photo AS Photo, D.Phone AS Phone  FROM dbo.Doctors AS D   INNER JOIN dbo.USERS AS U 
-           ON U.ID_Staff=D.Id WHERE U.ID =${req.body.ID}`)))
-    }
-  } else {
-    res.status(404).send('"User doesnt has"')
-  }
-})
-
-app.post('/time', async (req,res)=>{
-  let decoded = jwtCheck(req, config.secret)
-  if (decoded) {
-    return res.status(201).send(JSON.stringify(await Reseptions.findAll()))
-  }
-})
-
-app.post('/addprescription', async (req,res)=>{
-  let decoded = jwtCheck(req, config.secret)
-  if (decoded) {
-    let month=req.body.Month<10?('0'+req.body.Month):req.body.Month
-    let day=  req.body.Day<10?('0'+req.body.Day):req.body.Day
-    let date=`2020-${month}-${day}`
-    return res.status(201).send(JSON.stringify(await Reseptions.create({ID_D: req.body.ID_D, ID_P: req.body.ID_P, Date: date, Time: req.body.Time})))
-
-    //  return res.status(201).send(JSON.stringify(await sequelize.query(`INSERT INTO dbo.Reseptions(ID_D, ID_P, Date, Time)
-      // VALUES (${req.body.ID_D}, ${req.body.ID_P}, '2020-${req.body.Month}-${req.body.Day}', '${req.body.Time}')`)))
-  }
-})
-
-
-const fr = require("fs");
-
-app.get('/main', async (req, res) => {
-  let first = fr.readFileSync("article/coronavirus.txt", "UTF8")
-  let second = fr.readFileSync("article/new_virus.txt", "UTF8")
-  let third = fr.readFileSync("article/protection.txt", "UTF8")
-
-  await res.status(200).send(JSON.stringify([first, second, third]))
-})
-
-app.post('/regirstration', async (req, res) => {
-  //так тоже можно, но здесь SQL возвращает количество созданных позиций
-  // res.status(201).send(JSON.stringify(await sequelize.query(`INSERT INTO USERS(Login, Password, Role) VALUES ('${req.body.Login}', '${req.body.Password}', 4)`)))
-  let user = await User.create({ Login: req.body.Login, Password: req.body.Password, Role: 4 })
-  let ur = jwt.sign({ sub: user.ID }, config.secret)
-  res.status(201).send(JSON.stringify({ token: ur, Login: user.Login, ID: user.ID }))
-
-})
-
-
-
-
-sequelize.sync()
-  .then(result => {
-    console.log("/////////////////////Every is ok!")
-  })
-  .catch(err => console.log(err));
-
-const port = "4000"
-app.listen(port, () => console.log(`Example app listening on port ${port}!`))
 
 ///////////////////  
 
