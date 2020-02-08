@@ -1,0 +1,26 @@
+.h-400{
+    max-height: 400px;
+}
+.h-300{
+    max-height: 300px;
+}
+.center{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.blue{
+    color: rgb(27, 27, 49);
+}
+.d-inline{
+    display: inline!important;
+}
+.d-flex{
+    display: flex;
+}
+.bg-white{
+    background-color: white;
+}
+.bg-img{
+    background-image: url('https://avatars.mds.yandex.net/get-pdb/1953170/4e5ff356-a2dc-452a-bce0-1b39c420563a/s1200');
+}

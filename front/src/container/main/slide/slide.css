@@ -1,0 +1,15 @@
+.height-400{
+    max-height: 250px;
+}
+.p-blue{
+   color: rgb(78, 78, 128);
+}
+.bold{
+    font-weight: bold;
+}
+.font-noto{
+    font-family: 'Fugaz One', cursive;
+}
+.br-none{
+    border: none;
+}

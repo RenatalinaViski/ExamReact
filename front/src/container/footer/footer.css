@@ -1,0 +1,21 @@
+.br-none{
+   border: transparent;
+}
+.w-5{
+    width: 25px;
+    height: 25px;
+}
+.flex-row{
+    display: flex;
+    flex-flow: row;
+}
+.m-0{
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 0;
+    padding-right: 0;
+}
+.bt-0{
+    margin-bottom: 0;
+    padding-bottom: 0;
+}

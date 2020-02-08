@@ -1,0 +1,16 @@
+.bg-none{
+    background-color: transparent;
+    margin: 3rem 3rem 1rem 5rem;
+}
+.br-none{
+    border: transparent;
+}
+.width{
+    max-width: 100px;
+}
+.img-width{
+    width: 70px;
+}
+.card-propose:hover{
+    border: 2px solid #b4b7e2;    
+}
